@@ -2,16 +2,19 @@
 import { CommandLineParser } from './src/command-line.js';
 import { serverDirectory } from './src/server-directory.js';
 
-console.log(`Node version: ${process.version}. Running in ${process.env.NODE_ENV} environment. Server directory: ${serverDirectory}`);
+// 解析命令行参数（如果有）
+const cliArgsRaw = process.argv.length > 2 ? process.argv : [];
+const cliArgs = new CommandLineParser().parse(cliArgsRaw);
 
-// config.yaml will be set when parsing command line arguments
-const cliArgs = new CommandLineParser().parse(process.argv);
-globalThis.DATA_ROOT = cliArgs.dataRoot;
+// Railway 适配
+cliArgs.listen = true;
+cliArgs.port = parseInt(process.env.PORT) || 5000;
+cliArgs.enableIPv4 = true;
+cliArgs.enableIPv6 = false;
+
 globalThis.COMMAND_LINE_ARGS = cliArgs;
+globalThis.DATA_ROOT = cliArgs.dataRoot || serverDirectory;
 process.chdir(serverDirectory);
 
-try {
-    await import('./src/server-main.js');
-} catch (error) {
-    console.error('A critical error has occurred while starting the server:', error);
-}
+// 启动 SillyTavern
+await import('./src/server-main.js');
