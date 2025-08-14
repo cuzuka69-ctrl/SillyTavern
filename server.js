@@ -1,17 +1,18 @@
-#!/usr/bin/env node
+// server.js
 import { CommandLineParser } from './src/command-line.js';
 import { serverDirectory } from './src/server-directory.js';
 
-console.log(`Node version: ${process.version}. Running in ${process.env.NODE_ENV} environment. Server directory: ${serverDirectory}`);
+const cliArgsRaw = process.argv.length > 2 ? process.argv : [];
+const cliArgs = new CommandLineParser().parse(cliArgsRaw);
 
-// config.yaml will be set when parsing command line arguments
-const cliArgs = new CommandLineParser().parse(process.argv);
-globalThis.DATA_ROOT = cliArgs.dataRoot;
+// Render 适配
+cliArgs.listen = true; // 确保服务器启动
+cliArgs.port = parseInt(process.env.PORT) || 5000;
+cliArgs.enableIPv4 = true;
+cliArgs.enableIPv6 = false;
+
 globalThis.COMMAND_LINE_ARGS = cliArgs;
+globalThis.DATA_ROOT = cliArgs.dataRoot || serverDirectory;
 process.chdir(serverDirectory);
 
-try {
-    await import('./src/server-main.js');
-} catch (error) {
-    console.error('A critical error has occurred while starting the server:', error);
-}
+await import('./src/server-main.js');
